@@ -10,3 +10,4 @@ psycopg[binary]>=3.2
 gunicorn>=23.0
 pytest>=8.3
 pytest-django>=4.9
+whitenoise>=6.9
