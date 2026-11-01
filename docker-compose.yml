@@ -1,0 +1,53 @@
+# One command: docker compose up --build
+# Then seed demo data: docker compose exec backend python manage.py seed_demo
+services:
+  db:
+    image: postgis/postgis:16-3.4
+    environment:
+      POSTGRES_DB: bloodlink
+      POSTGRES_USER: bloodlink
+      POSTGRES_PASSWORD: bloodlink
+    volumes: [pgdata:/var/lib/postgresql/data]
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U bloodlink"]
+      interval: 5s
+      retries: 10
+
+  redis:
+    image: redis:7-alpine
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+
+  backend: &backend
+    build: ./backend
+    env_file: ./backend/.env.example
+    environment:
+      POSTGRES_HOST: db
+      REDIS_URL: redis://redis:6379/0
+    command: sh -c "python manage.py migrate --noinput && gunicorn config.wsgi:application -b 0.0.0.0:8000 -w 3"
+    ports: ["8000:8000"]
+    depends_on:
+      db: { condition: service_healthy }
+      redis: { condition: service_healthy }
+
+  worker:
+    <<: *backend
+    command: celery -A config worker -l info --concurrency 4
+    ports: []
+
+  beat:
+    <<: *backend
+    command: celery -A config beat -l info
+    ports: []
+
+  frontend:
+    build:
+      context: ./frontend
+      args:
+        BACKEND_URL: http://backend:8000
+    ports: ["3000:3000"]
+    depends_on: [backend]
+
+volumes:
+  pgdata:
