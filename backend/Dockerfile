@@ -10,4 +10,5 @@ RUN DJANGO_SECRET_KEY=build python manage.py collectstatic --noinput >/dev/null 
 EXPOSE 8000
 # CMD ["gunicorn", "config.wsgi:application", "-b", "0.0.0.0:8000", "-w", "3", "--timeout", "60"]
 # CMD ["sh", "-c", "gunicorn config.wsgi:application -b 0.0.0.0:${PORT:-8000} -w 2 --timeout 60"]
-CMD ["sh", "-c", "python manage.py migrate --noinput && gunicorn config.wsgi:application -b 0.0.0.0:${PORT:-8000} -w 2 --timeout 60"]
+# CMD ["sh", "-c", "python manage.py migrate --noinput && gunicorn config.wsgi:application -b 0.0.0.0:${PORT:-8000} -w 2 --timeout 60"]
+CMD ["sh", "-c", "python manage.py migrate --noinput && python manage.py createsuperuser --noinput && gunicorn config.wsgi:application -b 0.0.0.0:${PORT:-8000} -w 2 --timeout 60"]
