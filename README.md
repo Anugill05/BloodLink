@@ -109,7 +109,6 @@ After running `seed_demo`, every demo account uses the password `bloodlink123`.
 | Patient or family | `family@demo.bloodlink` |
 | Hospital staff (LLRM Meerut) | `staff0@demo.bloodlink` |
 
-The login page has one-click buttons for these accounts. Remove that block from `frontend/src/app/login/page.tsx` before using the app with real users.
 
 ### Admin login
 
