@@ -11,4 +11,5 @@ EXPOSE 8000
 # CMD ["gunicorn", "config.wsgi:application", "-b", "0.0.0.0:8000", "-w", "3", "--timeout", "60"]
 # CMD ["sh", "-c", "gunicorn config.wsgi:application -b 0.0.0.0:${PORT:-8000} -w 2 --timeout 60"]
 # CMD ["sh", "-c", "python manage.py migrate --noinput && gunicorn config.wsgi:application -b 0.0.0.0:${PORT:-8000} -w 2 --timeout 60"]
-CMD ["sh", "-c", "python manage.py migrate --noinput && python manage.py createsuperuser --noinput --email=\"$DJANGO_SUPERUSER_EMAIL\" --full_name=\"$DJANGO_SUPERUSER_FULL_NAME\" && gunicorn config.wsgi:application -b 0.0.0.0:${PORT:-8000} -w 2 --timeout 60"]
+# CMD ["sh", "-c", "python manage.py migrate --noinput && python manage.py createsuperuser --noinput --email=\"$DJANGO_SUPERUSER_EMAIL\" --full_name=\"$DJANGO_SUPERUSER_FULL_NAME\" && gunicorn config.wsgi:application -b 0.0.0.0:${PORT:-8000} -w 2 --timeout 60"]
+CMD ["sh", "-c", "python manage.py migrate --noinput && gunicorn config.wsgi:application -b 0.0.0.0:${PORT:-8000} -w 2 --timeout 60"]
