@@ -288,9 +288,9 @@ export default function RequestTracker() {
         </div>
       )}
 
-      <div className="mt-6 grid gap-6 lg:grid-cols-[1.25fr_1fr]">
+      <div className="mt-6 grid gap-6 lg:grid-cols-[minmax(0,1.25fr)_minmax(0,1fr)]">
         {/* Progress */}
-        <div className="card p-5 sm:p-6">
+        <div className="card min-w-0 p-5 sm:p-6">
           <h2 className="font-semibold">Progress</h2>
           <div className="mt-4 grid grid-cols-3 gap-4 border-b border-line pb-5">
             <div>
@@ -331,7 +331,7 @@ export default function RequestTracker() {
           </dl>
         </div>
 
-        <div className="space-y-6">
+        <div className="min-w-0 space-y-6">
           {/* Donors on the way */}
           <div className="card">
             <div className="flex items-center justify-between border-b border-line px-5 py-4">

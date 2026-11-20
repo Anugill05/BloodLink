@@ -436,7 +436,7 @@ export default function DonorHome() {
         </div>
       </div>
 
-      <div className="mt-8 grid gap-8 lg:grid-cols-[1.6fr_1fr]">
+      <div className="mt-8 grid gap-8 lg:grid-cols-[minmax(0,1.6fr)_minmax(0,1fr)]">
         <div className="space-y-6">
           {active.map((a) => <OnTheWay key={a.id} a={a} refresh={refresh} />)}
 
