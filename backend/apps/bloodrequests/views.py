@@ -92,8 +92,13 @@ class MatchViewSet(viewsets.GenericViewSet):
 
     @action(detail=True, methods=["post"])
     def accept(self, request, pk=None):
-        eta = request.data.get("eta_minutes")
-        return self._ok(services.accept_match(self.get_object(), request.user, int(eta) if eta else None))
+        # "I'm coming" — optional eta_minutes (1-180) is validated in the service.
+        return self._ok(services.accept_match(self.get_object(), request.user, request.data.get("eta_minutes")))
+
+    @action(detail=True, methods=["post"])
+    def eta(self, request, pk=None):
+        """Donor changes their arrival time after already saying they're coming."""
+        return self._ok(services.update_eta(self.get_object(), request.user, request.data.get("eta_minutes")))
 
     @action(detail=True, methods=["post"])
     def decline(self, request, pk=None):

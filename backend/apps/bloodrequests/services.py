@@ -113,9 +113,35 @@ def _own_match(match, user) -> DonorMatch:
     return match
 
 
+def _clean_eta(eta_minutes):
+    """Donor says "I'm coming in N minutes". Accept 1-180, or None for "no estimate"."""
+    if eta_minutes in (None, ""):
+        return None
+    try:
+        eta = int(eta_minutes)
+    except (TypeError, ValueError):
+        raise ValidationError({"eta_minutes": "Enter the number of minutes as a whole number."})
+    if not 1 <= eta <= 180:
+        raise ValidationError({"eta_minutes": "Arrival time must be between 1 and 180 minutes."})
+    return eta
+
+
+def _notify_hospital_staff_eta(req, match, eta, updated=False):
+    if not eta:
+        return
+    verb = "updated their arrival time" if updated else "is on the way"
+    for staff in req.hospital.staff.filter(is_active=True):
+        notify(staff, Notification.Kind.REQUEST_UPDATE,
+               f"Donor {verb} for {req.code}",
+               f"A {match.donor.blood_group} donor will arrive in about {eta} min "
+               f"({match.distance_km:.1f} km away).",
+               link="/hospital", email=False)
+
+
 @transaction.atomic
 def accept_match(match, user, eta_minutes=None):
     _own_match(match, user)
+    eta_minutes = _clean_eta(eta_minutes)
     req = BloodRequest.objects.select_for_update().get(pk=match.request_id)
     if req.status != S.OPEN:
         raise ValidationError("This request is no longer open.")
@@ -132,11 +158,30 @@ def accept_match(match, user, eta_minutes=None):
     log_event(req, "ACCEPTED", f"A {match.donor.blood_group} donor {match.distance_km:.1f} km away is on the way{eta}")
     if req.created_by:
         notify(req.created_by, Notification.Kind.REQUEST_UPDATE, f"A donor is on the way for {req.code}",
-               f"{req.units_pledged}/{req.units_needed} units pledged.", link=f"/requests/{req.pk}", email=False)
+               f"{req.units_pledged}/{req.units_needed} units pledged." + (f" Arriving in about {eta_minutes} min." if eta_minutes else ""),
+               link=f"/requests/{req.pk}", email=False)
+    _notify_hospital_staff_eta(req, match, eta_minutes)
     if req.units_pledged >= req.units_needed:
         # Covered: quietly close the remaining open alerts so nobody else travels for nothing.
         req.matches.filter(status=M.NOTIFIED).update(status=M.STOOD_DOWN)
         log_event(req, "COVERED", "All units pledged — remaining alerts withdrawn")
+    return match
+
+
+@transaction.atomic
+def update_eta(match, user, eta_minutes):
+    """Donor who already said "I'm coming" changes how long they will take (e.g. stuck in traffic)."""
+    _own_match(match, user)
+    if match.status != M.ACCEPTED:
+        raise ValidationError("You can only update your arrival time while you are on the way.")
+    eta = _clean_eta(eta_minutes)
+    if not eta:
+        raise ValidationError({"eta_minutes": "Enter the number of minutes."})
+    match.eta_minutes = eta
+    match.responded_at = timezone.now()  # ETA counts down from the moment the donor last updated it
+    match.save(update_fields=["eta_minutes", "responded_at"])
+    log_event(match.request, "ETA_UPDATED", f"A {match.donor.blood_group} donor now expects to arrive in about {eta} min")
+    _notify_hospital_staff_eta(match.request, match, eta, updated=True)
     return match
 
 
